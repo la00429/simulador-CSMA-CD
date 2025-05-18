@@ -100,6 +100,6 @@ Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE.md](LICENSE.m
 
 ## ✉️ Contacto
 
-Tu Nombre - [tu-email@ejemplo.com](mailto:tu-email@ejemplo.com)
+Tu Nombre - [laura.figueredo02@uptc.edu.co](mailto:tu-email@ejemplo.com)
 
-Link del Proyecto: [https://github.com/tu-usuario/simulador-csma-cd](https://github.com/tu-usuario/simulador-csma-cd) 
+Link del Proyecto: [https://github.com/la00429/simulador-csma-cd](https://github.com/la00429/simulador-csma-cd) 
