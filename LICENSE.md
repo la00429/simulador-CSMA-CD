@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2024 [Laura Figueredo]
+Copyright (c) 2025 [Laura Figueredo]
 
 Por la presente se concede permiso, libre de cargos, a cualquier persona que obtenga una copia
 de este software y de los archivos de documentación asociados (el "Software"), para utilizar
