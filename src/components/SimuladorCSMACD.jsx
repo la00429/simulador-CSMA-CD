@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { Box, Button, Paper, Typography, Grid, Chip, Divider, Accordion, AccordionSummary, AccordionDetails, LinearProgress } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Box, Button, Paper, Typography, Grid, Chip, Divider, Accordion, AccordionSummary, AccordionDetails, LinearProgress, Card, CardContent, Alert, IconButton, Tooltip } from '@mui/material';
 import { motion } from 'framer-motion';
 import Mascota from './Mascota';
 import RedVisualization from './RedVisualization';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
 const SimuladorCSMACD = () => {
   const [paso, setPaso] = useState(0);
@@ -10,6 +11,8 @@ const SimuladorCSMACD = () => {
   const [estacionTransmitiendo, setEstacionTransmitiendo] = useState(null);
   const [intentos, setIntentos] = useState(1);
   const [mostrarTodasCapas, setMostrarTodasCapas] = useState(true);
+  const [capaSeleccionada, setCapaSeleccionada] = useState(null);
+  const [mostrarInfoCSMACD, setMostrarInfoCSMACD] = useState(false);
 
   const estadosMascota = {
     0: { estado: 'normal', mensaje: 'Observemos cómo las estaciones escuchan el canal...' },
@@ -64,6 +67,140 @@ const SimuladorCSMACD = () => {
       relevancia: 'Detecta las colisiones a nivel eléctrico y transmite la señal de jam.'
     }
   };
+
+  const protocolosRelacion = {
+    'Capa Física': [
+      {
+        nombre: 'Frame Relay',
+        relacionCSMACD: {
+          tipo: 'indirecta',
+          nivel: 20,
+          explicacion: 'No interactúa directamente con CSMA/CD ya que opera en redes WAN, mientras que CSMA/CD es para LAN.'
+        }
+      }
+    ],
+    'Capa de Enlace de Datos': [
+      {
+        nombre: 'STP',
+        relacionCSMACD: {
+          tipo: 'directa',
+          nivel: 90,
+          explicacion: 'Trabaja directamente con CSMA/CD para mantener la integridad de la red Ethernet.'
+        }
+      }
+    ],
+    'Capa de Red': [
+      {
+        nombre: 'IPX',
+        relacionCSMACD: {
+          tipo: 'dependiente',
+          nivel: 60,
+          explicacion: 'Depende de CSMA/CD para la transmisión de paquetes en redes Ethernet.'
+        }
+      }
+    ],
+    'Capa de Transporte': [
+      {
+        nombre: 'iSCSI',
+        relacionCSMACD: {
+          tipo: 'indirecta',
+          nivel: 40,
+          explicacion: 'Utiliza CSMA/CD a través de las capas inferiores cuando opera sobre Ethernet.'
+        }
+      }
+    ],
+    'Capa de Sesión': [
+      {
+        nombre: 'NetBEUI',
+        relacionCSMACD: {
+          tipo: 'dependiente',
+          nivel: 50,
+          explicacion: 'Depende de CSMA/CD para la transmisión de datos en redes Ethernet.'
+        }
+      }
+    ],
+    'Capa de Presentación': [
+      {
+        nombre: 'ICA',
+        relacionCSMACD: {
+          tipo: 'indirecta',
+          nivel: 30,
+          explicacion: 'Utiliza CSMA/CD a través de las capas inferiores para la transmisión de datos.'
+        }
+      }
+    ],
+    'Capa de Aplicación': [
+      {
+        nombre: 'SMTP',
+        relacionCSMACD: {
+          tipo: 'indirecta',
+          nivel: 20,
+          explicacion: 'Utiliza CSMA/CD a través de todas las capas inferiores para la transmisión de correos.'
+        }
+      }
+    ]
+  };
+
+  const getColorByTipo = (tipo) => {
+    switch(tipo) {
+      case 'directa': return 'success';
+      case 'dependiente': return 'warning';
+      case 'indirecta': return 'info';
+      default: return 'default';
+    }
+  };
+
+  function RelacionCSMACDCard({ protocolo }) {
+    const { nombre, relacionCSMACD } = protocolo;
+    return (
+      <Card sx={{ mt: 2, mb: 2, backgroundColor: '#f8f9fa', minWidth: 220, maxWidth: 400 }}>
+        <CardContent>
+          <Typography variant="subtitle1" gutterBottom align="center">
+            {nombre}
+          </Typography>
+          <Typography variant="h6" gutterBottom align="center">
+            Relación con CSMA/CD
+          </Typography>
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="subtitle2" gutterBottom>
+              Nivel de Interacción
+            </Typography>
+            <LinearProgress 
+              variant="determinate" 
+              value={relacionCSMACD.nivel} 
+              sx={{ 
+                height: 10, 
+                borderRadius: 5,
+                backgroundColor: '#e0e0e0',
+                '& .MuiLinearProgress-bar': {
+                  backgroundColor: getColorByTipo(relacionCSMACD.tipo)
+                }
+              }} 
+            />
+            <Typography variant="body2" sx={{ mt: 1, textAlign: 'right' }}>
+              {relacionCSMACD.nivel}%
+            </Typography>
+          </Box>
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="subtitle2" gutterBottom>
+              Tipo de Relación
+            </Typography>
+            <Chip 
+              label={relacionCSMACD.tipo.toUpperCase()} 
+              color={getColorByTipo(relacionCSMACD.tipo)}
+              sx={{ fontWeight: 'bold' }}
+            />
+          </Box>
+          <Typography variant="subtitle2" gutterBottom>
+            Explicación
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {relacionCSMACD.explicacion}
+          </Typography>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const pasos = [
     {
@@ -144,6 +281,22 @@ const SimuladorCSMACD = () => {
           'Rango de espera: 0 a (2^n - 1) slots, donde n es el número de colisiones'
         ],
         implementacion: 'Se usa un generador de números aleatorios para seleccionar el tiempo de espera dentro del rango calculado.'
+      }
+    },
+    {
+      titulo: 'Transmisión Exitosa',
+      descripcion: '¡La transmisión se ha completado exitosamente! Los datos han llegado a su destino sin colisiones.',
+      capaOSI: 'Capa de Enlace de Datos',
+      capasInvolucradas: ['Capa de Enlace de Datos', 'Capa Física'],
+      protocolos: ['Ethernet IEEE 802.3', 'MAC'],
+      detallesTecnicos: {
+        proceso: 'La trama se transmite completamente y se verifica el FCS (Frame Check Sequence) en el destino.',
+        parametros: [
+          'Tamaño mínimo de trama: 64 bytes',
+          'Tamaño máximo de trama: 1518 bytes',
+          'FCS: 4 bytes de CRC-32'
+        ],
+        implementacion: 'El receptor verifica el FCS para asegurar la integridad de los datos recibidos.'
       }
     }
   ];
@@ -255,6 +408,7 @@ const SimuladorCSMACD = () => {
 
   const renderModeloOSI = () => {
     const pasoActual = pasos[paso];
+    const capaActiva = capaSeleccionada || (pasoActual ? pasoActual.capasInvolucradas[0] : null);
     return (
       <Paper 
         elevation={3} 
@@ -297,7 +451,7 @@ const SimuladorCSMACD = () => {
               fontSize: '0.85rem'
             }}
           >
-            {mostrarTodasCapas ? 'Mostrar Solo Relevantes' : 'Mostrar Todas'}
+            {mostrarTodasCapas ? 'Mostrar Relevantes' : 'Mostrar Todas'}
           </Button>
         </Box>
         <Divider sx={{ mb: 2 }} />
@@ -322,11 +476,10 @@ const SimuladorCSMACD = () => {
         }}>
           {Object.entries(capasOSI).reverse().map(([nombre, capa], index) => {
             const estaInvolucrada = pasoActual?.capasInvolucradas.includes(nombre);
-            
+            const seleccionada = capaSeleccionada === nombre;
             if (!mostrarTodasCapas && !estaInvolucrada) {
               return null;
             }
-
             return (
               <Paper
                 key={nombre}
@@ -336,18 +489,21 @@ const SimuladorCSMACD = () => {
                   mb: 2,
                   borderRadius: 2,
                   position: 'relative',
-                  backgroundColor: estaInvolucrada ? 'primary.light' : 'background.paper',
+                  backgroundColor: seleccionada ? 'primary.dark' : (estaInvolucrada ? 'primary.light' : 'background.paper'),
                   border: '1px solid',
-                  borderColor: estaInvolucrada ? 'primary.main' : 'grey.200',
+                  borderColor: seleccionada ? 'primary.main' : (estaInvolucrada ? 'primary.main' : 'grey.200'),
                   transition: 'all 0.3s ease',
-                  transform: estaInvolucrada ? 'scale(1.02)' : 'scale(1)',
+                  transform: seleccionada ? 'scale(1.04)' : (estaInvolucrada ? 'scale(1.02)' : 'scale(1)'),
                   '&:hover': {
-                    transform: 'scale(1.03)',
-                    boxShadow: 4
+                    transform: 'scale(1.05)',
+                    boxShadow: 4,
+                    cursor: 'pointer',
+                    backgroundColor: 'primary.light'
                   },
                   overflow: 'hidden',
                   opacity: estaInvolucrada || mostrarTodasCapas ? 1 : 0.7
                 }}
+                onClick={() => setCapaSeleccionada(nombre)}
               >
                 {/* Número de capa como círculo */}
                 <Box
@@ -358,11 +514,11 @@ const SimuladorCSMACD = () => {
                     width: 40,
                     height: 40,
                     borderRadius: '50%',
-                    backgroundColor: estaInvolucrada ? 'primary.main' : 'grey.300',
+                    backgroundColor: seleccionada ? 'primary.main' : (estaInvolucrada ? 'primary.main' : 'grey.300'),
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: estaInvolucrada ? 'white' : 'text.primary',
+                    color: seleccionada ? 'white' : (estaInvolucrada ? 'white' : 'text.primary'),
                     fontWeight: 'bold',
                     fontSize: '0.9rem',
                     boxShadow: 2,
@@ -371,28 +527,26 @@ const SimuladorCSMACD = () => {
                 >
                   {capa.numero}
                 </Box>
-
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                   <Typography 
                     variant="h6" 
                     sx={{ 
                       fontSize: '1.1rem',
                       fontWeight: 600,
-                      color: estaInvolucrada ? 'primary.contrastText' : 'text.primary',
+                      color: seleccionada ? 'primary.contrastText' : (estaInvolucrada ? 'primary.contrastText' : 'text.primary'),
                       mb: 1
                     }}
                   >
                     {nombre}
                   </Typography>
-
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 1 }}>
                     {capa.protocolos.map((protocolo, i) => (
                       <Chip
                         key={i}
                         label={protocolo}
                         size="small"
-                        variant={estaInvolucrada ? "filled" : "outlined"}
-                        color={estaInvolucrada ? "primary" : "default"}
+                        variant={seleccionada || estaInvolucrada ? "filled" : "outlined"}
+                        color={seleccionada || estaInvolucrada ? "primary" : "default"}
                         sx={{ 
                           borderRadius: '4px',
                           '& .MuiChip-label': {
@@ -402,33 +556,38 @@ const SimuladorCSMACD = () => {
                       />
                     ))}
                   </Box>
-
                   <Typography 
                     variant="body2" 
                     sx={{ 
-                      color: estaInvolucrada ? 'primary.contrastText' : 'text.secondary',
+                      color: seleccionada ? 'primary.contrastText' : (estaInvolucrada ? 'primary.contrastText' : 'text.secondary'),
                       opacity: 0.9,
                       fontSize: '0.85rem'
                     }}
                   >
                     {capa.descripcion}
                   </Typography>
-
-                  {estaInvolucrada && (
+                  {(seleccionada || estaInvolucrada) && (
                     <Typography 
                       variant="body2" 
                       sx={{ 
                         mt: 1,
-                        color: 'primary.contrastText',
+                        color: seleccionada ? 'primary.contrastText' : (estaInvolucrada ? 'primary.contrastText' : 'text.secondary'),
                         fontStyle: 'italic',
                         fontSize: '0.85rem',
                         borderLeft: '3px solid',
-                        borderColor: 'primary.contrastText',
+                        borderColor: seleccionada ? 'primary.contrastText' : (estaInvolucrada ? 'primary.contrastText' : 'primary.main'),
                         pl: 1
                       }}
                     >
                       {capa.relevancia}
                     </Typography>
+                  )}
+                  {(seleccionada || estaInvolucrada) && protocolosRelacion[nombre] && protocolosRelacion[nombre].length > 0 && (
+                    <Box sx={{ mt: 2 }}>
+                      {protocolosRelacion[nombre].map((protocolo, idx) => (
+                        <RelacionCSMACDCard key={protocolo.nombre + idx} protocolo={protocolo} />
+                      ))}
+                    </Box>
                   )}
                 </Box>
               </Paper>
@@ -438,6 +597,13 @@ const SimuladorCSMACD = () => {
       </Paper>
     );
   };
+
+  useEffect(() => {
+    const pasoActual = pasos[paso];
+    if (capaSeleccionada && (!pasoActual || !Object.keys(capasOSI).includes(capaSeleccionada))) {
+      setCapaSeleccionada(null);
+    }
+  }, [paso]);
 
   return (
     <Box sx={{ position: 'relative', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#f8f9fa' }}>
