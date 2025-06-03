@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { ThemeProvider, createTheme } from '@mui/material';
-import { CssBaseline, Container, Paper, Tabs, Tab, Box, Typography, IconButton, Tooltip, Alert } from '@mui/material';
-import SimuladorCSMACD from './components/SimuladorCSMACD';
-import ProtocolosInfo from './components/ProtocolosInfo';
+import { CssBaseline, Container, Paper, Tabs, Tab, Box } from '@mui/material';
+import TopologiaBus from './components/TopologiaBus';
+import TopologiaEstrella from './components/TopologiaEstrella';
 import PresentacionBitsy from './components/PresentacionBitsy';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
 const theme = createTheme({
   palette: {
@@ -84,7 +83,6 @@ const theme = createTheme({
 function App() {
   const [tabActual, setTabActual] = useState(0);
   const [mostrarPresentacion, setMostrarPresentacion] = useState(true);
-  const [mostrarInfoCSMACD, setMostrarInfoCSMACD] = useState(false);
 
   const handleCambioTab = (event, newValue) => {
     setTabActual(newValue);
@@ -124,33 +122,12 @@ function App() {
               borderColor: 'divider'
             }}
           >
-            <Tab label="Simulador CSMA/CD" />
-            <Tab label="Protocolos y Capas OSI" />
+            <Tab label="Topología Bus (Coaxial)" />
+            <Tab label="Topología Estrella (Hub)" />
           </Tabs>
         </Paper>
-        {/* Título y botón de info solo en la simulación */}
-        {tabActual === 0 && (
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h4" sx={{ fontWeight: 600, mr: 1 }}>
-              Simulador CSMA/CD
-            </Typography>
-            <Tooltip title="¿Dónde funciona CSMA/CD?">
-              <IconButton size="small" onClick={() => setMostrarInfoCSMACD(v => !v)}>
-                <InfoOutlinedIcon color="primary" />
-              </IconButton>
-            </Tooltip>
-          </Box>
-        )}
-        {mostrarInfoCSMACD && (
-          <Alert severity="info" sx={{ mb: 2 }} onClose={() => setMostrarInfoCSMACD(false)}>
-            <strong>Nota:</strong> CSMA/CD (Carrier Sense Multiple Access with Collision Detection) es un mecanismo diseñado exclusivamente para redes Ethernet cableadas (IEEE 802.3). No se utiliza en redes inalámbricas (WiFi), redes WAN, ni en Ethernet con switches modernos, donde las colisiones ya no ocurren.
-          </Alert>
-        )}
-        {tabActual === 0 ? (
-          <SimuladorCSMACD />
-        ) : (
-          <ProtocolosInfo />
-        )}
+        {tabActual === 0 && <TopologiaBus />}
+        {tabActual === 1 && <TopologiaEstrella />}
       </Container>
     </ThemeProvider>
   );
